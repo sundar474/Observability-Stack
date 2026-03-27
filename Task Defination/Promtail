@@ -1,0 +1,43 @@
+cat > /tmp/promtail-task.json << EOF
+{
+    "family": "promtail",
+    "executionRoleArn": "arn:aws:iam::036475471569:role/ecsTaskExecutionRole",
+    "networkMode": "bridge",
+    "containerDefinitions": [
+        {
+            "name": "promtail",
+            "image": "036475471569.dkr.ecr.us-east-1.amazonaws.com/observability/promtail:latest",
+            "memory": 256,
+            "cpu": 128,
+            "mountPoints": [
+                {
+                    "sourceVolume": "docker-logs",
+                    "containerPath": "/var/lib/docker/containers",
+                    "readOnly": true
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/observability",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "promtail",
+                    "awslogs-create-group": "true"
+                }
+            }
+        }
+    ],
+    "volumes": [
+        {
+            "name": "docker-logs",
+            "host": {
+                "sourcePath": "/var/lib/docker/containers"
+            }
+        }
+    ]
+}
+EOF
+
+aws ecs register-task-definition \
+  --cli-input-json file: ///tmp/promtail-task.json \
+  --region us-east-1

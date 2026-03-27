@@ -1,0 +1,45 @@
+cat > /tmp/otel-task.json << EOF
+{
+    "family": "otel-collector",
+    "executionRoleArn": "arn:aws:iam::036475471569:role/ecsTaskExecutionRole",
+    "networkMode": "bridge",
+    "containerDefinitions": [
+        {
+            "name": "otel-collector",
+            "image": "036475471569.dkr.ecr.us-east-1.amazonaws.com/observability/otel-collector:latest",
+            "memory": 512,
+            "cpu": 256,
+            "portMappings": [
+                {
+                    "containerPort": 4317,
+                    "hostPort": 14317,
+                    "protocol": "tcp"
+                },
+                {
+                    "containerPort": 4318,
+                    "hostPort": 14318,
+                    "protocol": "tcp"
+                },
+                {
+                    "containerPort": 8889,
+                    "hostPort": 8889,
+                    "protocol": "tcp"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/observability",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "otel-collector",
+                    "awslogs-create-group": "true"
+                }
+            }
+        }
+    ]
+}
+EOF
+
+aws ecs register-task-definition \
+  --cli-input-json file: ///tmp/otel-task.json \
+  --region us-east-1
